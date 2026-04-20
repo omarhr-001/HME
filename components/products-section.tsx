@@ -15,14 +15,14 @@ export function ProductsSection() {
     ? products.slice(0, 8)
     : products.filter(p => p.category === category).slice(0, 8)
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, quantity: number = 1) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
     const existingItem = cart.find((item: any) => item.id === product.id)
     
     if (existingItem) {
-      existingItem.quantity += 1
+      existingItem.quantity += quantity
     } else {
-      cart.push({ ...product, quantity: 1 })
+      cart.push({ ...product, quantity })
     }
     
     localStorage.setItem('cart', JSON.stringify(cart))
