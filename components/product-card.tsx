@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { Heart, ShoppingCart } from 'lucide-react'
+import { ProductDetailsModal } from './product-details-modal'
 import type { Product } from '@/lib/products'
 
 interface ProductCardProps extends Product {
-  onAddToCart: (product: Product) => void
+  onAddToCart: (product: Product, quantity: number) => void
 }
 
 export function ProductCard({
@@ -25,6 +25,7 @@ export function ProductCard({
   onAddToCart
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const product: Product = {
     id,
@@ -42,9 +43,37 @@ export function ProductCard({
   
   const discount = Math.round(((originalPrice - price) / originalPrice) * 100)
 
+  const handleAddToCartFromCard = () => {
+    onAddToCart(product, 1)
+  }
+
+  const handleAddToCartFromModal = (product: Product, quantity: number) => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingItem = cart.find((item: any) => item.id === product.id)
+
+    if (existingItem) {
+      existingItem.quantity += quantity
+    } else {
+      cart.push({ ...product, quantity })
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart))
+    window.dispatchEvent(new Event('cartUpdated'))
+  }
+
   return (
-    <Link href={`/product/${id}`}>
-      <div className="bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300">
+    <>
+      <ProductDetailsModal
+        product={product}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddToCart={handleAddToCartFromModal}
+      />
+
+      <div 
+        onClick={() => setIsModalOpen(true)}
+        className="bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
+      >
         {/* Image Container */}
         <div className="relative w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
           <Image
@@ -73,7 +102,7 @@ export function ProductCard({
           {/* Wishlist Button */}
           <button
             onClick={(e) => {
-              e.preventDefault()
+              e.stopPropagation()
               setIsWishlisted(!isWishlisted)
             }}
             className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${
@@ -113,8 +142,8 @@ export function ProductCard({
             </div>
             <button
               onClick={(e) => {
-                e.preventDefault()
-                if (inStock) onAddToCart(product)
+                e.stopPropagation()
+                if (inStock) handleAddToCartFromCard()
               }}
               disabled={!inStock}
               className={`w-9 h-9 border-none rounded-2xl flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${
@@ -128,6 +157,6 @@ export function ProductCard({
           </div>
         </div>
       </div>
-    </Link>
+    </>
   )
 }
