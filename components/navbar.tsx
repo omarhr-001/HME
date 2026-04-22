@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ShoppingCart, Menu, X } from 'lucide-react'
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -49,8 +50,16 @@ export function Navbar() {
             </span>
           )}
         </Link>
-        <button className="btn-outline hidden md:inline-block">Connexion</button>
-        <button className="btn-primary hidden md:inline-block">S'inscrire</button>
+        
+        <SignedOut>
+          <Link href="/sign-in" className="btn-outline hidden md:inline-block">Connexion</Link>
+          <Link href="/sign-up" className="btn-primary hidden md:inline-block">S&apos;inscrire</Link>
+        </SignedOut>
+
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+
         <button 
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden bg-none border-none cursor-pointer p-2 text-gray-600"
@@ -67,8 +76,15 @@ export function Navbar() {
             <Link href="/products" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Produits</Link>
             <Link href="/about" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">À propos</Link>
             <Link href="/contact" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Contact</Link>
-            <button className="btn-outline w-full mt-2">Connexion</button>
-            <button className="btn-primary w-full mt-2">S'inscrire</button>
+            <SignedOut>
+              <Link href="/sign-in" className="btn-outline w-full mt-2">Connexion</Link>
+              <Link href="/sign-up" className="btn-primary w-full mt-2">S&apos;inscrire</Link>
+            </SignedOut>
+            <SignedIn>
+              <div className="mt-2">
+                <UserButton />
+              </div>
+            </SignedIn>
           </div>
         </div>
       )}
