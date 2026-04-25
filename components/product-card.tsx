@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, ShoppingCart } from 'lucide-react'
-import { ProductDetailsModal } from './product-details-modal'
+import Link from 'next/link'
 import type { Product } from '@/lib/products'
 
 interface ProductCardProps extends Product {
@@ -25,7 +25,6 @@ export function ProductCard({
   onAddToCart
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const product: Product = {
     id,
@@ -47,31 +46,9 @@ export function ProductCard({
     onAddToCart(product, 1)
   }
 
-  const handleAddToCartFromModal = (product: Product, quantity: number) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItem = cart.find((item: any) => item.id === product.id)
-
-    if (existingItem) {
-      existingItem.quantity += quantity
-    } else {
-      cart.push({ ...product, quantity })
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart))
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
-
   return (
-    <>
-      <ProductDetailsModal
-        product={product}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddToCart={handleAddToCartFromModal}
-      />
-
+    <Link href={`/product/${id}`}>
       <div 
-        onClick={() => setIsModalOpen(true)}
         className="bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
       >
         {/* Image Container */}
@@ -157,6 +134,6 @@ export function ProductCard({
           </div>
         </div>
       </div>
-    </>
+    </Link>
   )
 }
