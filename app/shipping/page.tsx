@@ -29,7 +29,7 @@ export default function ShippingPage() {
                   <p className="text-gray-600 mb-4">Tunis, Ariana, Ben Arous, Manouba</p>
                   <div className="space-y-2">
                     <p className="text-sm"><span className="font-bold">Délai:</span> 3-5 jours</p>
-                    <p className="text-sm"><span className="font-bold">Frais:</span> Gratuit (>500 DT)</p>
+                    <p className="text-sm"><span className="font-bold">Frais:</span> Gratuit (&gt;500 DT)</p>
                   </div>
                 </div>
 
