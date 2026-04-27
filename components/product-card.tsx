@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { ProductDetailsModal } from './product-details-modal'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
   onAddToCart: (product: Product, quantity: number) => void
@@ -17,11 +17,13 @@ export function ProductCard({
   price,
   originalPrice,
   image,
+  image_url,
   rating,
   reviews,
   description,
   specs,
   inStock,
+  stock_quantity,
   onAddToCart
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
@@ -33,15 +35,16 @@ export function ProductCard({
     category,
     price,
     originalPrice,
-    image,
+    image: image || image_url || '/images/placeholder.jpg',
     rating,
     reviews,
     description,
     specs,
-    inStock
+    inStock: inStock !== undefined ? inStock : (stock_quantity && stock_quantity > 0)
   }
   
-  const discount = Math.round(((originalPrice - price) / originalPrice) * 100)
+  const discount = originalPrice && price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0
+  const isInStock = inStock !== undefined ? inStock : (stock_quantity && stock_quantity > 0)
 
   const handleAddToCartFromCard = () => {
     onAddToCart(product, 1)
@@ -77,7 +80,7 @@ export function ProductCard({
         {/* Image Container */}
         <div className="relative w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
           <Image
-            src={image}
+            src={product.image}
             alt={name}
             width={280}
             height={200}
@@ -93,7 +96,7 @@ export function ProductCard({
           )}
           
           {/* Stock Status */}
-          {!inStock && (
+          {!isInStock && (
             <span className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold">
               Rupture de stock
             </span>
@@ -125,29 +128,29 @@ export function ProductCard({
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <span key={i} className="text-amber-400 text-xs">
-                  {i < Math.floor(rating) ? '★' : '☆'}
+                  {i < Math.floor(rating || 0) ? '★' : '☆'}
                 </span>
               ))}
             </div>
-            <span className="text-xs text-gray-500">({reviews})</span>
+            <span className="text-xs text-gray-500">({reviews || 0})</span>
           </div>
 
           {/* Footer */}
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="font-bold text-lg text-gray-800">{price.toFixed(2)} DT</span>
-              {originalPrice > price && (
+              {originalPrice && originalPrice > price && (
                 <span className="text-xs text-gray-400 line-through">{originalPrice.toFixed(2)} DT</span>
               )}
             </div>
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                if (inStock) handleAddToCartFromCard()
+                if (isInStock) handleAddToCartFromCard()
               }}
-              disabled={!inStock}
+              disabled={!isInStock}
               className={`w-9 h-9 border-none rounded-2xl flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${
-                inStock 
+                isInStock 
                   ? 'bg-green-500 hover:bg-green-600 hover:scale-110' 
                   : 'bg-gray-300 cursor-not-allowed'
               }`}

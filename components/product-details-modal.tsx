@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, ShoppingCart, X, Check } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface ProductDetailsModalProps {
   product: Product | null
@@ -24,7 +24,8 @@ export function ProductDetailsModal({
 
   if (!isOpen || !product) return null
 
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const discount = product.originalPrice && product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0
+  const imageUrl = product.image || product.image_url || '/images/placeholder.jpg'
 
   const handleAddToCart = () => {
     onAddToCart(product, quantity)
@@ -67,7 +68,7 @@ export function ProductDetailsModal({
               <div className="flex items-center justify-center">
                 <div className="relative w-full aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
                   <Image
-                    src={product.image}
+                    src={imageUrl}
                     alt={product.name}
                     fill
                     className="w-full h-full object-cover"
@@ -100,12 +101,12 @@ export function ProductDetailsModal({
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                       <span key={i} className="text-amber-400">
-                        {i < Math.floor(product.rating) ? '★' : '☆'}
+                        {i < Math.floor(product.rating || 0) ? '★' : '☆'}
                       </span>
                     ))}
                   </div>
-                  <span className="font-semibold text-gray-700">{product.rating}</span>
-                  <span className="text-gray-500">({product.reviews} avis)</span>
+                  <span className="font-semibold text-gray-700">{product.rating || 0}</span>
+                  <span className="text-gray-500">({product.reviews || 0} avis)</span>
                 </div>
 
                 {/* Price */}
@@ -114,18 +115,18 @@ export function ProductDetailsModal({
                     <span className="text-3xl font-bold text-green-600">
                       {product.price.toFixed(2)} DT
                     </span>
-                    {product.originalPrice > product.price && (
+                    {product.originalPrice && product.originalPrice > product.price && (
                       <span className="text-lg text-gray-400 line-through">
                         {product.originalPrice.toFixed(2)} DT
                       </span>
                     )}
                   </div>
-                  {product.inStock && (
+                  {product.inStock !== undefined ? product.inStock : (product.stock_quantity && product.stock_quantity > 0) ? (
                     <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
                       <Check size={16} />
                       En stock
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Quantity */}
@@ -152,9 +153,9 @@ export function ProductDetailsModal({
                 <div className="flex gap-3">
                   <button
                     onClick={handleAddToCart}
-                    disabled={!product.inStock}
+                    disabled={product.inStock === false}
                     className={`flex-1 py-3 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
-                      product.inStock
+                      product.inStock !== false
                         ? 'bg-green-500 text-white hover:bg-green-600'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     } ${addedToCart ? 'bg-green-600' : ''}`}
@@ -177,7 +178,7 @@ export function ProductDetailsModal({
             </div>
 
             {/* Specifications */}
-            {Object.keys(product.specs).length > 0 && (
+            {product.specs && Object.keys(product.specs).length > 0 && (
               <div className="mt-8 pt-8 border-t border-gray-200">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Spécifications</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,7 +187,7 @@ export function ProductDetailsModal({
                       <p className="text-xs text-gray-500 font-semibold uppercase mb-1">
                         {key}
                       </p>
-                      <p className="text-gray-800 font-semibold text-sm">{value}</p>
+                      <p className="text-gray-800 font-semibold text-sm">{String(value)}</p>
                     </div>
                   ))}
                 </div>

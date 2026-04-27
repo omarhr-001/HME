@@ -4,7 +4,7 @@ import { supabase, supabaseAdmin } from './supabase';
 import { revalidateTag } from 'next/cache';
 
 // Product Actions
-export async function getProducts() {
+export async function getAllProducts() {
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -12,6 +12,10 @@ export async function getProducts() {
 
   if (error) throw new Error(`Failed to fetch products: ${error.message}`);
   return data;
+}
+
+export async function getProducts() {
+  return getAllProducts();
 }
 
 export async function getProductById(id: string) {

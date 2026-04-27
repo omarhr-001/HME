@@ -13,18 +13,24 @@ export interface User {
 }
 
 export interface Product {
-  id: number;
+  id: number | string;
   name: string;
   description?: string;
   price: number;
   cost?: number;
-  stock_quantity: number;
+  stock_quantity?: number;
   category?: string;
+  image?: string;
   image_url?: string;
   sku?: string;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
+  is_active?: boolean;
+  inStock?: boolean;
+  originalPrice?: number;
+  rating?: number;
+  reviews?: number;
+  specs?: Record<string, string | number>;
+  created_at?: Date | string;
+  updated_at?: Date | string;
 }
 
 export interface Order {

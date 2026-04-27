@@ -1,27 +1,81 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-react'
 import Link from 'next/link'
-import { getProductById } from '@/lib/products'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const product = getProductById(params.id)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
 
-  if (!product) {
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const { id } = await params
+        const response = await fetch(`/api/products/${id}`)
+        if (!response.ok) {
+          throw new Error('Product not found')
+        }
+        const data = await response.json()
+        setProduct(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProduct()
+  }, [params])
+
+  const handleAddToCart = () => {
+    if (!product) return
+    
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingItem = cart.find((item: any) => item.id === product.id)
+
+    if (existingItem) {
+      existingItem.quantity += quantity
+    } else {
+      cart.push({ ...product, quantity })
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart))
+    window.dispatchEvent(new Event('cartUpdated'))
+    
+    setAddedToCart(true)
+    setTimeout(() => setAddedToCart(false), 2000)
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500">Chargement du produit...</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
+  if (error || !product) {
     return (
       <>
         <Navbar />
@@ -39,24 +93,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     )
   }
 
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-
-  const handleAddToCart = () => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItem = cart.find((item: any) => item.id === product.id)
-
-    if (existingItem) {
-      existingItem.quantity += quantity
-    } else {
-      cart.push({ ...product, quantity })
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart))
-    window.dispatchEvent(new Event('cartUpdated'))
-    
-    setAddedToCart(true)
-    setTimeout(() => setAddedToCart(false), 2000)
-  }
+  const discount = product.originalPrice && product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0
 
   return (
     <>
@@ -109,19 +146,19 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <div className="flex items-center gap-2">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="text-lg text-amber-400">
-                      {i < Math.floor(product.rating) ? '★' : '☆'}
+                      {i < Math.floor(product.rating || 0) ? '★' : '☆'}
                     </span>
                   ))}
                 </div>
-                <span className="text-sm font-semibold text-gray-700">{product.rating}</span>
-                <span className="text-sm text-gray-500">({product.reviews} avis)</span>
+                <span className="text-sm font-semibold text-gray-700">{product.rating || 0}</span>
+                <span className="text-sm text-gray-500">({product.reviews || 0} avis)</span>
               </div>
 
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-3 mb-2">
                   <span className="text-3xl font-bold text-green-600">{product.price.toFixed(2)} DT</span>
-                  {product.originalPrice > product.price && (
+                  {product.originalPrice && product.originalPrice > product.price && (
                     <span className="text-lg text-gray-400 line-through">{product.originalPrice.toFixed(2)} DT</span>
                   )}
                 </div>
@@ -192,7 +229,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                   <Shield size={24} className="text-green-600 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-800">Garantie couverte</p>
-                    <p className="text-sm text-gray-500">{product.specs['Garantie'] || '2 ans'} de couverture complète</p>
+                    <p className="text-sm text-gray-500">{(product.specs && product.specs['Garantie']) || '2 ans'} de couverture complète</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200">
@@ -207,17 +244,19 @@ export default function ProductPage({ params }: ProductPageProps) {
           </div>
 
           {/* Specifications */}
-          <div className="mt-16 bg-white rounded-3xl p-8 border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Spécifications</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Object.entries(product.specs).map(([key, value]) => (
-                <div key={key} className="pb-4 border-b border-gray-200">
-                  <p className="text-sm text-gray-500 font-semibold mb-1">{key}</p>
-                  <p className="text-gray-800 font-semibold">{value}</p>
-                </div>
-              ))}
+          {product.specs && Object.keys(product.specs).length > 0 && (
+            <div className="mt-16 bg-white rounded-3xl p-8 border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Spécifications</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Object.entries(product.specs).map(([key, value]) => (
+                  <div key={key} className="pb-4 border-b border-gray-200">
+                    <p className="text-sm text-gray-500 font-semibold mb-1">{key}</p>
+                    <p className="text-gray-800 font-semibold">{String(value)}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Related Products */}
           <div className="mt-16">

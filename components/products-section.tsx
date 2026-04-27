@@ -1,15 +1,38 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductCard } from './product-card'
-import { products, getAllCategories } from '@/lib/products'
 import { ArrowRight } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 export function ProductsSection() {
+  const [products, setProducts] = useState<Product[]>([])
   const [category, setCategory] = useState('all')
-  const categories = getAllCategories()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products')
+        if (!response.ok) throw new Error('Failed to fetch products')
+        const data = await response.json()
+        setProducts(data)
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
+  const categories = Array.from(new Set(
+    products
+      .filter(p => p.category)
+      .map(p => p.category as string)
+  )).sort()
   
   const displayedProducts = category === 'all' 
     ? products.slice(0, 8)
@@ -27,6 +50,22 @@ export function ProductsSection() {
     
     localStorage.setItem('cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('cartUpdated'))
+  }
+
+  if (loading) {
+    return (
+      <section className="px-[5%] py-16">
+        <div className="flex items-center justify-between mb-7">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">Produits à la une</h2>
+            <p className="text-sm text-gray-500">Découvrez notre sélection exclusive</p>
+          </div>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-gray-500">Chargement des produits...</p>
+        </div>
+      </section>
+    )
   }
 
   return (
