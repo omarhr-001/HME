@@ -18,11 +18,11 @@ export async function getProducts() {
   return getAllProducts();
 }
 
-export async function getProductById(id: string) {
+export async function getProductById(id: string | number) {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('id', id)
+    .eq('id', typeof id === 'string' ? parseInt(id) : id)
     .single();
 
   if (error) throw new Error(`Failed to fetch product: ${error.message}`);

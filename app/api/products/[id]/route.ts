@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllProducts, getProductById } from '@/lib/db-actions';
+import { getProductById } from '@/lib/db-actions';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const product = await getProductById(parseInt(id));
+    const product = await getProductById(id);
     
     if (!product) {
       return NextResponse.json(
